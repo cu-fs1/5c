@@ -24,12 +24,11 @@ routes/
   middleware (CORS and JSON body parsing), and registers the `/products`
   router.
 - **config/db.js**: connects to the database using the ``MONGO_URI`` from
-environment.
+  environment.
 - **product.model.js**: defines `Product` with embedded `variants` and `reviews`
   sub‑documents, plus virtuals and indexes for performance.
 - **product.controller.js**: contains all business logic for listing,
-  creating, updating, deleting products, adding reviews, updating stock, and
-  generating statistics.
+  creating, updating, deleting products, adding reviews, and updating stock.
 - **product.routes.js**: wires controller functions to REST endpoints.
 
 ---
@@ -68,22 +67,12 @@ environment.
 | DELETE | `/products/:id`         | Delete a product                       |
 | POST   | `/products/:id/reviews` | Add a review to a product              |
 | PATCH  | `/products/:id/stock`   | Update stock for a specific SKU        |
-| GET    | `/products/stats`       | Get aggregate statistics by category   |
 
-> **Note**: `GET /products/stats` must appear before `/:id` in routing, as
-> the router is order-sensitive.
 
 ### Pagination
 
 `GET /products` supports `page` and `limit` query parameters. The response
 includes a `pagination` object with totals and current page info.
-
-### Statistics
-
-`GET /products/stats` returns an array grouped by category with:
-- total stock across variants
-- average review rating
-- count of distinct products
 
 ---
 

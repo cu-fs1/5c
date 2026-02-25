@@ -7,12 +7,10 @@ import {
   deleteProduct,
   addReview,
   updateStock,
-  getStats,
 } from "../controllers/product.controller.js";
 
 const router = express.Router();
 
-router.get("/stats", getStats); // must be before /:id
 router.get("/", getProducts);
 router.post("/", createProduct);
 router.get("/:id", getProductById);
