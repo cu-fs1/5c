@@ -107,3 +107,76 @@ includes a `pagination` object with totals and current page info.
 
 Feel free to extend the codebase with authentication, validation, or a front‑end
 client!
+
+---
+
+## 🧠 Detailed Code Overview
+
+### config/db.js
+This async helper reads `MONGO_URI` from the environment and uses
+`mongoose.connect()` to establish the connection. In case the variable is
+missing or the connection fails, it logs an error but does not terminate the
+process. Successful connection is confirmed by a console message.
+
+### models/product.model.js
+- **Variant Schema**: Embedded subdocument without its own `_id`, containing
+  SKU, color, price, and stock. Stock is non-negative and defaults to `0`.
+- **Review Schema**: Also embedded and _id-less; stores a reference to the user
+  (`userId`), a rating between 1 and 5, and an optional comment. Timestamps are
+  enabled so each review has `createdAt`/`updatedAt`.
+- **Product Schema**: Top-level document with `name`, `category`, and arrays of
+  variants and reviews. Timestamps are on the product level as well.
+- **Virtuals**: `avgRating` computes the average review score at read time and
+  is included when converting documents to JSON/Object.
+- **Indexes**: Compound index on category+name to speed up filtered searches and
+  a sparse unique index on `variants.sku` to enforce SKU uniqueness only when
+  variants exist.
+
+### controllers/product.controller.js
+Each exported function corresponds to an API action:
+
+1. **getProducts**
+   - Reads `page`/`limit` from query string, applies `skip`/`limit` on the
+     `Product.find()` result sorted by creation date (newest first).
+   - Returns both the matching documents and pagination metadata (`totalProducts`,
+     `totalPages`, etc.).
+2. **createProduct**
+   - Constructs a new `Product` from `req.body` and saves it. Responds with
+     `201 Created` on success.
+3. **getProductById**
+   - Fetches a product by its Mongo `_id`; 404 if not found.
+4. **updateProduct**
+   - Uses `findByIdAndUpdate` with `runValidators` so schema rules apply to
+     updates. Returns the updated document.
+5. **deleteProduct**
+   - Removes the document and returns confirmation plus the deleted object.
+6. **addReview**
+   - Pushes a new review into `reviews` array using `$push`; returns the updated
+     product with status `201`.
+7. **updateStock**
+   - Atomically increments (`$inc`) the `stock` field of a specific variant
+     identified by SKU. Handles the case where either product or SKU is missing.
+8. **getStats**
+   - Aggregates products by category, unwinds variants, and computes:
+     * total stock per category, * average rating (across all reviews), * count
+     of distinct products.  The pipeline gracefully handles products without
+     reviews by returning `null` for `avgRating`.
+
+Error handling generally catches exceptions and responds with a `500` or `400`
+as appropriate, including the error message for debugging.
+
+### routes/product.routes.js
+Express router maps HTTP methods and paths to controller functions. The
+`/stats` route is defined before the dynamic `/:id` route to avoid path
+collision. All routes use path parameters or JSON body payloads as required.
+
+### index.js
+Loads environment variables (`dotenv`), creates the Express app, and configures
+CORS and JSON parsing middleware. Calls `connectDB()` before setting up routes to
+ensure the database is available. Finally, it defines a simple root endpoint and
+starts listening on the `PORT` from the environment (default 3000).
+
+---
+
+With these details in place, the README now gives readers both high-level
+context and low-level understanding of how each piece works together.
