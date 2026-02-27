@@ -3,7 +3,7 @@
 This repository is a simple Node.js/Express application that provides a RESTful API
 for managing products stored in a MongoDB database.  It demonstrates the use of
 modern JavaScript features (ES modules), `mongoose` for data modeling, and basic
-pagination, aggregation and CRUD operations.
+pagination and CRUD operations.
 
 ---
 
@@ -23,7 +23,7 @@ routes/
 - **index.js**: bootstraps the server, loads environment variables, applies
   middleware (CORS and JSON body parsing), and registers the `/products`
   router.
-- **config/db.js**: connects to the database using the ``MONGO_URI`` from
+- **config/db.js**: connects to the database using the `MONGO_URI` from
   environment.
 - **product.model.js**: defines `Product` with embedded `variants` and `reviews`
   sub‑documents, plus virtuals and indexes for performance.
@@ -67,6 +67,15 @@ routes/
 | DELETE | `/products/:id`         | Delete a product                       |
 | POST   | `/products/:id/reviews` | Add a review to a product              |
 | PATCH  | `/products/:id/stock`   | Update stock for a specific SKU        |
+
+### Request Body Notes
+
+- `POST /products` and `PUT /products/:id` can include `name`, `category`,
+  `variants`, and `reviews`.
+- `POST /products/:id/reviews` expects a single review object in request body:
+  `{ "userId": "<ObjectId>", "rating": 1-5, "comment": "optional" }`.
+- `PATCH /products/:id/stock` expects:
+  `{ "sku": "<variant_sku>", "delta": <number> }`.
 
 
 ### Pagination
@@ -145,19 +154,14 @@ Each exported function corresponds to an API action:
 7. **updateStock**
    - Atomically increments (`$inc`) the `stock` field of a specific variant
      identified by SKU. Handles the case where either product or SKU is missing.
-8. **getStats**
-   - Aggregates products by category, unwinds variants, and computes:
-     * total stock per category, * average rating (across all reviews), * count
-     of distinct products.  The pipeline gracefully handles products without
-     reviews by returning `null` for `avgRating`.
 
 Error handling generally catches exceptions and responds with a `500` or `400`
 as appropriate, including the error message for debugging.
 
 ### routes/product.routes.js
-Express router maps HTTP methods and paths to controller functions. The
-`/stats` route is defined before the dynamic `/:id` route to avoid path
-collision. All routes use path parameters or JSON body payloads as required.
+Express router maps HTTP methods and paths to controller functions for listing,
+creating, reading, updating, deleting, review creation, and stock update. All
+routes use path parameters or JSON body payloads as required.
 
 ### index.js
 Loads environment variables (`dotenv`), creates the Express app, and configures
